@@ -850,7 +850,7 @@ bool TWPartitionManager::Restore_Partition(TWPartition* Part, string Restore_Nam
 }
 
 int TWPartitionManager::Run_Restore(string Restore_Name) {
-	int check_md5, check, partition_count = 0;
+	int skip_md5, check, partition_count = 0;
 	TWPartition* restore_part = NULL;
 	time_t rStart, rStop;
 	time(&rStart);
@@ -864,8 +864,8 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 	if (!Mount_Current_Storage(true))
 		return false;
 
-	DataManager::GetValue(TW_SKIP_MD5_CHECK_VAR, check_md5);
-	if (check_md5 > 0) {
+	DataManager::GetValue(TW_SKIP_MD5_CHECK_VAR, skip_md5);
+	if (skip_md5 == 0) {
 		// Check MD5 files first before restoring to ensure that all of them match before starting a restore
 		TWFunc::GUI_Operation_Text(TW_VERIFY_MD5_TEXT, "Verifying MD5");
 		gui_print("Verifying MD5...\n");
@@ -884,7 +884,7 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 					LOGERR("Cannot restore %s -- mounted read only.\n", restore_part->Backup_Display_Name.c_str());
 					return false;
 				}
-				if (check_md5 > 0 && !restore_part->Check_MD5(Restore_Name))
+				if (skip_md5 == 0 && !restore_part->Check_MD5(Restore_Name))
 					return false;
 				partition_count++;
 				total_restore_size += restore_part->Get_Restore_Size(Restore_Name);
@@ -893,7 +893,7 @@ int TWPartitionManager::Run_Restore(string Restore_Name) {
 
 					for (subpart = Partitions.begin(); subpart != Partitions.end(); subpart++) {
 						if ((*subpart)->Is_SubPartition && (*subpart)->SubPartition_Of == restore_part->Mount_Point) {
-							if (check_md5 > 0 && !(*subpart)->Check_MD5(Restore_Name))
+							if (skip_md5 == 0 && !(*subpart)->Check_MD5(Restore_Name))
 								return false;
 							total_restore_size += (*subpart)->Get_Restore_Size(Restore_Name);
 						}
